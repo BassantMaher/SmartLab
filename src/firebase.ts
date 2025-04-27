@@ -1,6 +1,6 @@
-// src/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database"; // Import Realtime Database
+import { ref, set, get, child } from "firebase/database"; // Import required Realtime DB methods
 
 // Type for Firebase configuration
 interface FirebaseConfig {
@@ -26,7 +26,7 @@ const firebaseConfig: FirebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
-const db: Firestore = getFirestore(app);
+// Initialize Realtime Database
+const database = getDatabase(app);
 
-export { db };
+export { database, ref, set, get, child };
