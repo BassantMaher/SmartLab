@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle, Clock, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import EnvironmentalCard from '../../components/common/EnvironmentalCard';
+// import EnvironmentalCard from '../../components/common/EnvironmentalCard';
 import RequestCard from '../../components/common/RequestCard';
 import Loading from '../../components/common/Loading';
 import { getEnvironmentalMetrics, getUserBorrowRequests } from '../../utils/localStorage';
 import { EnvironmentalMetric, BorrowRequest } from '../../utils/types';
+
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -26,6 +27,8 @@ const DashboardPage: React.FC = () => {
       setIsLoading(false);
     }
   }, [user]);
+
+
 
   if (isLoading) {
     return <Loading />;
