@@ -85,7 +85,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Environmental Monitoring Section */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Lab Environment</h2>
           <span className="text-sm text-gray-500">Real-time monitoring</span>
@@ -96,7 +96,7 @@ const DashboardPage: React.FC = () => {
             <EnvironmentalCard key={metric.id} metric={metric} />
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Recent Requests Section */}
       <div>
