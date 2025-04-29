@@ -3,13 +3,14 @@
 // User types
 export interface User {
   id: string;
-  email: string;
-  password: string;
   name: string;
-  role: 'student' | 'admin';
+  email: string;
+  role: string;
   department?: string;
   studentId?: string;
   profileImage?: string;
+  totalRequests?: number;
+  activeRequests?: number;
 }
 
 // Auth context types
@@ -41,9 +42,8 @@ export interface InventoryItem {
   description: string;
   totalQuantity: number;
   availableQuantity: number;
-  location: string;
+  physicalQuantity: number;
   image?: string;
-  lastRestocked?: string;
   specifications?: Record<string, string>;
 }
 
