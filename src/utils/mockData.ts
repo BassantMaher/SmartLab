@@ -6,7 +6,7 @@ export const users: User[] = [
   {
     id: '1',
     email: 'student@student.com',
-    password: 'student',
+    // password: 'student',
     name: 'John Student',
     role: 'student',
     department: 'Computer Science',
@@ -16,7 +16,7 @@ export const users: User[] = [
   {
     id: '2',
     email: 'admin@admin.com',
-    password: 'admin',
+    // password: 'admin',
     name: 'Admin User',
     role: 'admin',
     profileImage: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150'
@@ -124,9 +124,9 @@ export const inventoryItems: InventoryItem[] = [
     description: 'Arduino Uno R3 microcontroller board based on the ATmega328P.',
     totalQuantity: 25,
     availableQuantity: 15,
-    location: 'Cabinet A, Shelf 2',
+    // location: 'Cabinet A, Shelf 2',
     image: 'https://images.pexels.com/photos/132700/pexels-photo-132700.jpeg?auto=compress&cs=tinysrgb&w=300',
-    lastRestocked: '2023-09-15',
+    // lastRestocked: '2023-09-15',
     specifications: {
       'Microcontroller': 'ATmega328P',
       'Operating Voltage': '5V',

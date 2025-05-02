@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, Clock, Package } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, CheckCircle, Clock, Package } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 // import EnvironmentalCard from '../../components/common/EnvironmentalCard';
-import RequestCard from '../../components/common/RequestCard';
-import Loading from '../../components/common/Loading';
-import { getEnvironmentalMetrics, getUserBorrowRequests } from '../../utils/localStorage';
-import { EnvironmentalMetric, BorrowRequest } from '../../utils/types';
-
+import RequestCard from "../../components/common/RequestCard";
+import Loading from "../../components/common/Loading";
+import { subscribeToData } from "../../firebase";
+import { EnvironmentalMetric, BorrowRequest } from "../../utils/types";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -17,26 +16,59 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Load data
-      const envMetrics = getEnvironmentalMetrics();
-      const userRequests = getUserBorrowRequests(user.id);
-      
-      // Set state
-      setMetrics(envMetrics);
-      setRequests(userRequests.slice(0, 5)); // Show only 5 most recent
-      setIsLoading(false);
+      setIsLoading(true);
+
+      // Subscribe to borrow requests for current user
+      const unsubscribeRequests = subscribeToData<
+        Record<string, BorrowRequest>
+      >(
+        "borrowRequests",
+        (data) => {
+          if (data) {
+            const userRequests = Object.keys(data)
+              .map((key) => ({
+                ...data[key],
+                id: key,
+              }))
+              .filter((request) => request.userId === user.id)
+              .sort(
+                (a, b) =>
+                  new Date(b.requestDate).getTime() -
+                  new Date(a.requestDate).getTime()
+              );
+
+            setRequests(userRequests.slice(0, 5)); // Show only 5 most recent
+          } else {
+            setRequests([]);
+          }
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Error fetching borrow requests:", error);
+          setIsLoading(false);
+        }
+      );
+
+      // Cleanup subscription
+      return () => {
+        unsubscribeRequests();
+      };
     }
   }, [user]);
-
-
 
   if (isLoading) {
     return <Loading />;
   }
 
-  const pendingRequests = requests.filter(req => req.status === 'pending').length;
-  const approvedRequests = requests.filter(req => req.status === 'approved').length;
-  const rejectedRequests = requests.filter(req => req.status === 'rejected').length;
+  const pendingRequests = requests.filter(
+    (req) => req.status === "pending"
+  ).length;
+  const approvedRequests = requests.filter(
+    (req) => req.status === "approved"
+  ).length;
+  const rejectedRequests = requests.filter(
+    (req) => req.status === "rejected"
+  ).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -47,7 +79,9 @@ const DashboardPage: React.FC = () => {
 
       {/* Stats Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Request Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Your Request Overview
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex items-center">
@@ -56,11 +90,13 @@ const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Pending</h3>
-                <p className="text-2xl font-bold text-gray-900">{pendingRequests}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {pendingRequests}
+                </p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex items-center">
               <div className="bg-green-100 p-3 rounded-lg mr-4">
@@ -68,11 +104,13 @@ const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Approved</h3>
-                <p className="text-2xl font-bold text-gray-900">{approvedRequests}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {approvedRequests}
+                </p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex items-center">
               <div className="bg-red-100 p-3 rounded-lg mr-4">
@@ -80,7 +118,9 @@ const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Rejected</h3>
-                <p className="text-2xl font-bold text-gray-900">{rejectedRequests}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {rejectedRequests}
+                </p>
               </div>
             </div>
           </div>
@@ -104,15 +144,17 @@ const DashboardPage: React.FC = () => {
       {/* Recent Requests Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Recent Requests</h2>
-          <Link 
-            to="/borrow-history" 
+          <h2 className="text-xl font-semibold text-gray-800">
+            Recent Requests
+          </h2>
+          <Link
+            to="/borrow-history"
             className="text-sm font-medium text-[#3B945E] hover:text-[#74B49B] transition-colors duration-150"
           >
             View all
           </Link>
         </div>
-        
+
         {requests.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {requests.map((request) => (
@@ -124,7 +166,9 @@ const DashboardPage: React.FC = () => {
             <div className="inline-flex items-center justify-center bg-[#DFF5E1] p-3 rounded-full mb-4">
               <Package className="h-8 w-8 text-[#3B945E]" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">No Requests Yet</h3>
+            <h3 className="text-lg font-medium text-gray-800 mb-2">
+              No Requests Yet
+            </h3>
             <p className="text-gray-600 mb-4">
               You haven't made any borrowing requests yet.
             </p>
