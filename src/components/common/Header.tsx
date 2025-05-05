@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, LogOut, Menu, User as UserIcon, X } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { getUserNotifications } from '../../utils/localStorage';
-import { formatDate } from '../../utils/helpers';
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  Menu,
+  User as UserIcon,
+  X,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { getUserNotifications } from "../../utils/localStorage";
+import { formatDate } from "../../utils/helpers";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -14,16 +21,14 @@ const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Get user notifications
-  const notifications = user 
-    ? getUserNotifications(user.id).slice(0, 5)
-    : [];
-  
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const notifications = user ? getUserNotifications(user.id).slice(0, 5) : [];
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Handle logout
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   // Toggle mobile menu
@@ -52,21 +57,21 @@ const Header: React.FC = () => {
   const getNavLinks = () => {
     if (!user) return [];
 
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return [
-        { title: 'Dashboard', path: '/admin/dashboard' },
-        { title: 'Inventory', path: '/admin/inventory' },
-        { title: 'Requests', path: '/admin/requests' },
-        { title: 'Students', path: '/admin/students' },
-        { title: 'Settings', path: '/admin/settings' }
+        { title: "Dashboard", path: "/admin/dashboard" },
+        { title: "Inventory", path: "/admin/inventory" },
+        { title: "Requests", path: "/admin/requests" },
+        { title: "Students", path: "/admin/students" },
+        { title: "Settings", path: "/admin/settings" },
       ];
     }
 
     return [
-      { title: 'Dashboard', path: '/dashboard' },
-      { title: 'Borrow', path: '/borrow-request' },
-      { title: 'History', path: '/borrow-history' },
-      { title: 'Profile', path: '/profile' }
+      { title: "Dashboard", path: "/dashboard" },
+      { title: "Borrow", path: "/borrow-request" },
+      { title: "History", path: "/borrow-history" },
+      { title: "Profile", path: "/profile" },
     ];
   };
 

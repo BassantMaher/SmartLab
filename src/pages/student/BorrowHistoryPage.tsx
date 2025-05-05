@@ -5,8 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import RequestCard from "../../components/common/RequestCard";
 import SearchFilter from "../../components/common/SearchFilter";
 import Loading from "../../components/common/Loading";
-import { subscribeToData, updateData } from "../../firebase";
-import { BorrowRequest } from "../../utils/types";
+import { subscribeToData, updateData, createData } from "../../firebase";
+import { BorrowRequest, InventoryItem } from "../../utils/types";
 
 const BorrowHistoryPage: React.FC = () => {
   const { user } = useAuth();
@@ -76,7 +76,9 @@ const BorrowHistoryPage: React.FC = () => {
   };
 
   // Mark item as returned
-  const handleMarkAsReturned = async (requestId: string) => {
+  const handleMarkAsReturned = async (action: "approve" | "reject" | "return", requestId: string) => {
+    if (action !== "return") return;
+    
     const requestToUpdate = requests.find((req) => req.id === requestId);
     if (requestToUpdate && requestToUpdate.status === "approved") {
       try {
@@ -88,6 +90,21 @@ const BorrowHistoryPage: React.FC = () => {
 
         // Update request in Firebase
         await updateData(`borrowRequests/${requestId}`, updatedRequest);
+
+        // Get the inventory item
+        const itemSnapshot = await subscribeToData<InventoryItem>(
+          `inventoryItems/${requestToUpdate.itemId}`,
+          async (itemData) => {
+            if (itemData) {
+              // Update inventory quantity
+              const updatedItem: InventoryItem = {
+                ...itemData,
+                availableQuantity: itemData.availableQuantity + requestToUpdate.quantity,
+              };
+              await createData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
+            }
+          }
+        );
 
         // Local state will be updated by the subscription
       } catch (error) {

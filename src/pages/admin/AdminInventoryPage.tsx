@@ -527,7 +527,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -544,7 +544,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -561,7 +561,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               value={formData.description}
               onChange={handleInputChange}
               rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -579,7 +579,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               value={formData.totalQuantity}
               onChange={handleInputChange}
               min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -597,7 +597,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               value={formData.availableQuantity}
               onChange={handleInputChange}
               min="0"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -615,7 +615,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               value={formData.physicalQuantity}
               onChange={handleInputChange}
               min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
               disabled={isSubmitting}
             />
@@ -632,7 +632,7 @@ const AddItemModal: React.FC<{ item?: InventoryItem | null; onClose: () => void 
               name="image"
               value={formData.image}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               disabled={isSubmitting}
             />
           </div>

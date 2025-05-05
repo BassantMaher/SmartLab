@@ -5,19 +5,22 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  password: string;
   role: string;
   department?: string;
   studentId?: string;
   profileImage?: string;
   totalRequests?: number;
   activeRequests?: number;
+  createdAt: string;
+  isVerifiedAdmin?: boolean;
 }
 
 // Auth context types
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -27,7 +30,7 @@ export interface EnvironmentalMetric {
   name: string;
   value: number;
   unit: string;
-  status: 'normal' | 'warning' | 'critical';
+  status: "normal" | "warning" | "critical";
   timestamp: string;
   minValue: number;
   maxValue: number;
@@ -57,7 +60,7 @@ export interface BorrowRequest {
   quantity: number;
   requestDate: string;
   dueDate: string;
-  status: 'pending' | 'approved' | 'rejected' | 'returned';
+  status: "pending" | "approved" | "rejected" | "returned";
   approvedBy?: string;
   approvalDate?: string;
   returnDate?: string;
@@ -72,5 +75,5 @@ export interface Notification {
   message: string;
   read: boolean;
   date: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: "info" | "success" | "warning" | "error";
 }

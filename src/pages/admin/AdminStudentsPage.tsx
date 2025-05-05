@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, User as UserIcon, Search, ArrowUpDown, X } from 'lucide-react';
-import SearchFilter from '../../components/common/SearchFilter';
-import Loading from '../../components/common/Loading';
-import { subscribeToData, readData, createData, deleteData, auth } from '../../firebase';
-import { User, BorrowRequest } from '../../utils/types';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import React, { useState, useEffect } from "react";
+import { Plus, User as UserIcon, Search, ArrowUpDown, X } from "lucide-react";
+import SearchFilter from "../../components/common/SearchFilter";
+import Loading from "../../components/common/Loading";
+import {
+  subscribeToData,
+  readData,
+  createData,
+  deleteData,
+  auth,
+} from "../../firebase";
+import { User, BorrowRequest } from "../../utils/types";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const AdminStudentsPage: React.FC = () => {
   const [students, setStudents] = useState<User[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
@@ -24,23 +30,25 @@ const AdminStudentsPage: React.FC = () => {
   // Load students and their request stats
   useEffect(() => {
     const unsubscribe = subscribeToData<Record<string, any>>(
-      'users',
+      "users",
       async (data) => {
         try {
-          console.log('Raw users data:', data);
+          console.log("Raw users data:", data);
           if (data) {
             // Flatten nested user objects
             const allUsers = Object.values(data).flatMap((userObj) => {
-              if (typeof userObj === 'object' && !userObj.role) {
+              if (typeof userObj === "object" && !userObj.role) {
                 return Object.values(userObj);
               }
               return userObj;
             });
-            console.log('Flattened users:', allUsers);
+            console.log("Flattened users:", allUsers);
 
             // Filter for students
-            const studentUsers = allUsers.filter((user) => user.role === 'student');
-            console.log('Filtered student users:', studentUsers);
+            const studentUsers = allUsers.filter(
+              (user) => user.role === "student"
+            );
+            console.log("Filtered student users:", studentUsers);
 
             // Get request stats for each student
             const studentsWithStats = await Promise.all(
@@ -50,10 +58,12 @@ const AdminStudentsPage: React.FC = () => {
                 );
                 console.log(`Borrow requests for ${student.id}:`, requests);
                 const userRequests = requests
-                  ? Object.values(requests).filter((req) => req.userId === student.id)
+                  ? Object.values(requests).filter(
+                      (req) => req.userId === student.id
+                    )
                   : [];
                 const activeRequests = userRequests.filter(
-                  (req) => req.status === 'approved'
+                  (req) => req.status === "approved"
                 ).length;
 
                 return {
@@ -63,25 +73,27 @@ const AdminStudentsPage: React.FC = () => {
                 };
               })
             );
-            console.log('Students with stats:', studentsWithStats);
+            console.log("Students with stats:", studentsWithStats);
 
             // Sort initially by name
             const sortedStudents = [...studentsWithStats].sort((a, b) =>
               a.name.localeCompare(b.name)
             );
-            console.log('Sorted students:', sortedStudents);
+            console.log("Sorted students:", sortedStudents);
 
             setStudents(sortedStudents);
             setFilteredStudents(sortedStudents);
           } else {
-            console.log('No users data received');
+            console.log("No users data received");
             setStudents([]);
             setFilteredStudents([]);
           }
           setIsLoading(false);
         } catch (err: any) {
-          console.error('Error loading students:', err);
-          setError(`Failed to load students: ${err.message || 'Unknown error'}`);
+          console.error("Error loading students:", err);
+          setError(
+            `Failed to load students: ${err.message || "Unknown error"}`
+          );
           setIsLoading(false);
         }
       }
@@ -101,7 +113,9 @@ const AdminStudentsPage: React.FC = () => {
           student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (student.department &&
-            student.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            student.department
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())) ||
           (student.studentId &&
             student.studentId.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -112,14 +126,14 @@ const AdminStudentsPage: React.FC = () => {
       const valueA = a[sortBy as keyof User];
       const valueB = b[sortBy as keyof User];
 
-      if (typeof valueA === 'string' && typeof valueB === 'string') {
-        return sortDirection === 'asc'
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return sortDirection === "asc"
           ? valueA.localeCompare(valueB)
           : valueB.localeCompare(valueA);
       }
 
-      if (typeof valueA === 'number' && typeof valueB === 'number') {
-        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
       }
 
       return 0;
@@ -136,10 +150,10 @@ const AdminStudentsPage: React.FC = () => {
   // Handle sort
   const handleSort = (column: string) => {
     if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortBy(column);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -171,13 +185,15 @@ const AdminStudentsPage: React.FC = () => {
 
       // Remove from local state
       setStudents((prev) => prev.filter((s) => s.id !== studentToDelete.id));
-      setFilteredStudents((prev) => prev.filter((s) => s.id !== studentToDelete.id));
+      setFilteredStudents((prev) =>
+        prev.filter((s) => s.id !== studentToDelete.id)
+      );
       console.log(`Student ${studentToDelete.id} removed from UI`);
       setIsConfirmDeleteOpen(false);
       setStudentToDelete(null);
     } catch (err: any) {
-      console.error('Error deleting student:', err);
-      setError(`Failed to delete student: ${err.message || 'Unknown error'}`);
+      console.error("Error deleting student:", err);
+      setError(`Failed to delete student: ${err.message || "Unknown error"}`);
     } finally {
       setIsDeleting(false);
     }
@@ -191,8 +207,12 @@ const AdminStudentsPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Student Management</h1>
-          <p className="text-gray-600 mt-1">Manage student accounts and permissions</p>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Student Management
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage student accounts and permissions
+          </p>
         </div>
         <div className="mt-4 md:mt-0">
           <button
@@ -216,7 +236,10 @@ const AdminStudentsPage: React.FC = () => {
 
       {/* Search */}
       <div className="mb-8">
-        <SearchFilter onSearch={handleSearch} placeholder="Search students..." />
+        <SearchFilter
+          onSearch={handleSearch}
+          placeholder="Search students..."
+        />
       </div>
 
       {/* Students list */}
@@ -228,56 +251,71 @@ const AdminStudentsPage: React.FC = () => {
                 <tr>
                   <th
                     className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('name')}
+                    onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center">
                       Student
-                      {sortBy === 'name' && (
-                        <ArrowUpDown size={14} className="ml-1 text-[#3B945E]" />
+                      {sortBy === "name" && (
+                        <ArrowUpDown
+                          size={14}
+                          className="ml-1 text-[#3B945E]"
+                        />
                       )}
                     </div>
                   </th>
                   <th
                     className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('department')}
+                    onClick={() => handleSort("department")}
                   >
                     <div className="flex items-center">
                       Department
-                      {sortBy === 'department' && (
-                        <ArrowUpDown size={14} className="ml-1 text-[#3B945E]" />
+                      {sortBy === "department" && (
+                        <ArrowUpDown
+                          size={14}
+                          className="ml-1 text-[#3B945E]"
+                        />
                       )}
                     </div>
                   </th>
                   <th
                     className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('studentId')}
+                    onClick={() => handleSort("studentId")}
                   >
                     <div className="flex items-center">
                       Student ID
-                      {sortBy === 'studentId' && (
-                        <ArrowUpDown size={14} className="ml-1 text-[#3B945E]" />
+                      {sortBy === "studentId" && (
+                        <ArrowUpDown
+                          size={14}
+                          className="ml-1 text-[#3B945E]"
+                        />
                       )}
                     </div>
                   </th>
                   <th
                     className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('totalRequests')}
+                    onClick={() => handleSort("totalRequests")}
                   >
                     <div className="flex items-center">
                       Requests
-                      {sortBy === 'totalRequests' && (
-                        <ArrowUpDown size={14} className="ml-1 text-[#3B945E]" />
+                      {sortBy === "totalRequests" && (
+                        <ArrowUpDown
+                          size={14}
+                          className="ml-1 text-[#3B945E]"
+                        />
                       )}
                     </div>
                   </th>
                   <th
                     className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('activeRequests')}
+                    onClick={() => handleSort("activeRequests")}
                   >
                     <div className="flex items-center">
                       Active Borrows
-                      {sortBy === 'activeRequests' && (
-                        <ArrowUpDown size={14} className="ml-1 text-[#3B945E]" />
+                      {sortBy === "activeRequests" && (
+                        <ArrowUpDown
+                          size={14}
+                          className="ml-1 text-[#3B945E]"
+                        />
                       )}
                     </div>
                   </th>
@@ -305,19 +343,29 @@ const AdminStudentsPage: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          <div className="text-xs text-gray-500">{student.email}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {student.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.department || '-'}</div>
+                      <div className="text-sm text-gray-900">
+                        {student.department || "-"}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.studentId || '-'}</div>
+                      <div className="text-sm text-gray-900">
+                        {student.studentId || "-"}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.totalRequests}</div>
+                      <div className="text-sm text-gray-900">
+                        {student.totalRequests}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -342,7 +390,9 @@ const AdminStudentsPage: React.FC = () => {
                         className="text-red-600 hover:text-red-800"
                         disabled={isDeleting}
                       >
-                        {isDeleting && studentToDelete?.id === student.id ? 'Removing...' : 'Remove'}
+                        {isDeleting && studentToDelete?.id === student.id
+                          ? "Removing..."
+                          : "Remove"}
                       </button>
                     </td>
                   </tr>
@@ -356,31 +406,42 @@ const AdminStudentsPage: React.FC = () => {
           <div className="inline-flex items-center justify-center bg-[#DFF5E1] p-3 rounded-full mb-4">
             <Search className="h-8 w-8 text-[#3B945E]" />
           </div>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">No Students Found</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">
+            No Students Found
+          </h3>
           <p className="text-gray-600">
-            No students match your search criteria. Try adjusting your search term.
+            No students match your search criteria. Try adjusting your search
+            term.
           </p>
         </div>
       )}
 
       {/* Add Student Modal */}
-      {isAddModalOpen && <AddStudentModal onClose={() => setIsAddModalOpen(false)} />}
+      {isAddModalOpen && (
+        <AddStudentModal onClose={() => setIsAddModalOpen(false)} />
+      )}
 
       {/* View Student Modal */}
       {isViewModalOpen && selectedStudent && (
-        <ViewStudentModal student={selectedStudent} onClose={() => setIsViewModalOpen(false)} />
+        <ViewStudentModal
+          student={selectedStudent}
+          onClose={() => setIsViewModalOpen(false)}
+        />
       )}
 
       {/* Confirm Delete Modal */}
       {isConfirmDeleteOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              Confirm Deletion
+            </h2>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete{' '}
-              <span className="font-medium">{studentToDelete?.name}</span>? This will remove their
-              data from the database. To fully delete their account, remove them from Firebase
-              Authentication in the Firebase Console.
+              Are you sure you want to delete{" "}
+              <span className="font-medium">{studentToDelete?.name}</span>? This
+              will remove their data from the database. To fully delete their
+              account, remove them from Firebase Authentication in the Firebase
+              Console.
             </p>
             <div className="flex justify-end space-x-4">
               <button
@@ -398,7 +459,7 @@ const AdminStudentsPage: React.FC = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none"
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
@@ -410,16 +471,14 @@ const AdminStudentsPage: React.FC = () => {
 
 // Modal Component for Adding Students
 const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [formData, setFormData] = useState<Omit<User, 'id' | 'role'>>(
-    {
-      name: '',
-      email: '',
-      department: '',
-      studentId: '',
-      profileImage: '',
-    }
-  );
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState<Omit<User, "id" | "role">>({
+    name: "",
+    email: "",
+    department: "",
+    studentId: "",
+    profileImage: "",
+  });
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (
@@ -438,71 +497,95 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     // Validation
     if (!formData.name || !formData.email) {
-      setError('Please fill in all required fields (Name, Email).');
+      setError("Please fill in all required fields (Name, Email).");
       return;
     }
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError("Password must be at least 6 characters long.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError('Please enter a valid email address.');
+      setError("Please enter a valid email address.");
       return;
     }
 
     try {
-      console.log('Auth instance:', auth);
-      console.log('Creating user with:', {
+      console.log("Auth instance:", auth);
+      console.log("Creating user with:", {
         email: formData.email,
-        password: '****',
+        password: "****",
         name: formData.name,
       });
 
       // Create Firebase Authentication user
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        password
+      );
       const userId = userCredential.user.uid;
+
+      // Sign out immediately to prevent automatic login
+      await auth.signOut();
 
       // Save user data to Realtime Database
       const newUser: User = {
         id: userId,
         name: formData.name,
         email: formData.email,
-        role: 'student',
+        role: "student",
         department: formData.department || undefined,
         studentId: formData.studentId || undefined,
         profileImage: formData.profileImage || undefined,
       };
 
       await createData(`users/${userId}`, newUser);
-      console.log('Student added successfully with ID:', userId);
+      console.log("Student added successfully with ID:", userId);
+
+      // Update the students list in the parent component
+      setStudents((prev) => [...prev, newUser]);
+      setFilteredStudents((prev) =>
+        [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name))
+      );
+
       onClose();
     } catch (error: any) {
-      console.error('Error adding student:', error);
+      console.error("Error adding student:", error);
       if (error.code) {
         switch (error.code) {
-          case 'auth/email-already-in-use':
-            setError('This email is already in use.');
+          case "auth/email-already-in-use":
+            setError("This email is already in use.");
             break;
-          case 'auth/invalid-email':
-            setError('Invalid email address.');
+          case "auth/invalid-email":
+            setError("Invalid email address.");
             break;
-          case 'auth/operation-not-allowed':
-            setError('Email/Password sign-in is not enabled in Firebase Console.');
+          case "auth/operation-not-allowed":
+            setError(
+              "Email/Password sign-in is not enabled in Firebase Console."
+            );
             break;
-          case 'auth/weak-password':
-            setError('Password is too weak. Use a stronger password.');
+          case "auth/weak-password":
+            setError("Password is too weak. Use a stronger password.");
             break;
-          case 'auth/invalid-api-key':
-            setError('Invalid Firebase API key. Check your Firebase configuration.');
+          case "auth/invalid-api-key":
+            setError(
+              "Invalid Firebase API key. Check your Firebase configuration."
+            );
             break;
-          case 'auth/configuration-not-found':
-            setError('Firebase Authentication is not properly configured. Verify apiKey and authDomain.');
+          case "auth/configuration-not-found":
+            setError(
+              "Firebase Authentication is not properly configured. Verify apiKey and authDomain."
+            );
             break;
           default:
-            setError(`Failed to add student: ${error.message || 'Unknown error'}`);
+            setError(
+              `Failed to add student: ${error.message || "Unknown error"}`
+            );
         }
       } else {
-        setError('An unexpected error occurred. Check Firebase configuration and network.');
+        setError(
+          "An unexpected error occurred. Check Firebase configuration and network."
+        );
       }
     }
   };
@@ -521,12 +604,17 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm">{error}</div>
+            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm">
+              {error}
+            </div>
           )}
 
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700"
+            >
               Name *
             </label>
             <input
@@ -535,14 +623,17 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
             />
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
               Email *
             </label>
             <input
@@ -551,14 +642,17 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
             />
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Password *
             </label>
             <input
@@ -566,14 +660,17 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
               required
             />
           </div>
 
           {/* Department */}
           <div>
-            <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="department"
+              className="block text-sm font-medium text-gray-700"
+            >
               Department
             </label>
             <input
@@ -582,13 +679,16 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               name="department"
               value={formData.department}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
             />
           </div>
 
           {/* Student ID */}
           <div>
-            <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="studentId"
+              className="block text-sm font-medium text-gray-700"
+            >
               Student ID
             </label>
             <input
@@ -597,13 +697,16 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               name="studentId"
               value={formData.studentId}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
             />
           </div>
 
           {/* Profile Image URL */}
           <div>
-            <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="profileImage"
+              className="block text-sm font-medium text-gray-700"
+            >
               Profile Image URL
             </label>
             <input
@@ -612,7 +715,7 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               name="profileImage"
               value={formData.profileImage}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3B945E] focus:ring-[#3B945E] sm:text-sm"
+              className="block w-full pl-5 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
             />
           </div>
 
@@ -669,35 +772,51 @@ const ViewStudentModal: React.FC<{ student: User; onClose: () => void }> = ({
               </div>
             )}
             <div>
-              <h3 className="text-lg font-medium text-gray-800">{student.name}</h3>
+              <h3 className="text-lg font-medium text-gray-800">
+                {student.name}
+              </h3>
               <p className="text-sm text-gray-500">{student.email}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Student ID</label>
-            <p className="mt-1 text-sm text-gray-900">{student.studentId || '-'}</p>
+            <label className="block text-sm font-medium text-gray-700">
+              Student ID
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {student.studentId || "-"}
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Department</label>
-            <p className="mt-1 text-sm text-gray-900">{student.department || '-'}</p>
+            <label className="block text-sm font-medium text-gray-700">
+              Department
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {student.department || "-"}
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Total Requests</label>
-            <p className="mt-1 text-sm text-gray-900">{student.totalRequests || 0}</p>
+            <label className="block text-sm font-medium text-gray-700">
+              Total Requests
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {student.totalRequests || 0}
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Active Borrows</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Active Borrows
+            </label>
             <p className="mt-1 text-sm text-gray-900">
               {student.activeRequests ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DFF5E1] text-[#3B945E]">
                   {student.activeRequests} items
                 </span>
               ) : (
-                'None'
+                "None"
               )}
             </p>
           </div>
