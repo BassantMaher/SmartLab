@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -9,8 +9,10 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { getUserNotifications } from "../../utils/localStorage";
-import { formatDate } from "../../utils/helpers";
+import { subscribeToData } from "../../firebase";
+import { Notification } from "../../utils/types";
+import NotificationList from "./NotificationList";
+import { formatDate } from '../../utils/helpers';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -20,10 +22,44 @@ const Header: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Get user notifications
-  const notifications = user ? getUserNotifications(user.id).slice(0, 5) : [];
+  // State for notifications
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Subscribe to notifications for admin only
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      const unsubscribeNotifications = subscribeToData<Record<string, Notification>>(
+        'notifications',
+        (data) => {
+          if (data) {
+            const allNotifications = Object.keys(data)
+              .map((key) => ({
+                ...data[key],
+                id: key,
+              }))
+              .sort(
+                (a, b) =>
+                  new Date(b.date).getTime() - new Date(a.date).getTime()
+              );
+
+            setNotifications(allNotifications.slice(0, 5));
+            setUnreadCount(allNotifications.filter((n) => !n.read).length);
+          } else {
+            setNotifications([]);
+            setUnreadCount(0);
+          }
+        }
+      );
+
+      return () => {
+        unsubscribeNotifications();
+      };
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [user]);
 
   // Handle logout
   const handleLogout = async () => {
@@ -112,8 +148,8 @@ const Header: React.FC = () => {
 
           {/* Right side icons */}
           <div className="hidden md:flex items-center">
-            {/* Notifications dropdown */}
-            {user && (
+            {/* Notifications dropdown - admin only */}
+            {user && user.role === 'admin' && (
               <div className="relative ml-3">
                 <button
                   onClick={toggleNotifications}
@@ -130,52 +166,11 @@ const Header: React.FC = () => {
 
                 {/* Notifications dropdown panel */}
                 {isNotificationsOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                    <div className="py-2 px-4 bg-[#74B49B] text-white rounded-t-md flex justify-between items-center">
-                      <h3 className="text-sm font-medium">Notifications</h3>
-                      <button
-                        onClick={() => setIsNotificationsOpen(false)}
-                        className="text-white"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    <div className="py-1 max-h-96 overflow-y-auto">
-                      {notifications.length > 0 ? (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 ${
-                              !notification.read ? "bg-[#DFF5E1]" : ""
-                            }`}
-                          >
-                            <p className="text-sm font-medium text-gray-900">
-                              {notification.title}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {formatDate(notification.date)}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-4 py-3 text-sm text-gray-500">
-                          No notifications
-                        </div>
-                      )}
-                    </div>
-                    <div className="py-1 bg-gray-50 rounded-b-md">
-                      <Link
-                        to="/notifications"
-                        className="block px-4 py-2 text-xs text-center text-[#3B945E] hover:underline"
-                        onClick={() => setIsNotificationsOpen(false)}
-                      >
-                        See all notifications
-                      </Link>
-                    </div>
-                  </div>
+                  <NotificationList
+                    notifications={notifications}
+                    onClose={() => setIsNotificationsOpen(false)}
+                    isAdmin={true}
+                  />
                 )}
               </div>
             )}

@@ -5,6 +5,7 @@ import Layout from '../components/common/Layout';
 
 // Public pages
 import LoginPage from '../pages/LoginPage';
+import NotificationsPage from '../pages/NotificationsPage';
 
 // Student pages
 import DashboardPage from '../pages/student/DashboardPage';
@@ -85,10 +86,7 @@ export const router = createBrowserRouter([
             path: 'borrow-history',
             element: <BorrowHistoryPage />
           },
-          {
-            path: 'profile',
-            element: <ProfilePage />
-          }
+          {            path: 'profile',            element: <ProfilePage />          },          {            path: 'notifications',            element: <NotificationsPage />          }
         ]
       },
       {
@@ -115,14 +113,11 @@ export const router = createBrowserRouter([
             path: 'students',
             element: <AdminStudentsPage />
           },
+          {            path: 'profile',            element: <ProfilePage />          },          {            path: 'notifications',            element: <NotificationsPage />          },
           {
-            path: 'settings',
+            path: 'Settings',
             element: <AdminSettingsPage />
           },
-          {
-            path: 'profile',
-            element: <ProfilePage />
-          }
         ]
       }
     ]

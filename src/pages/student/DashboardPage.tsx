@@ -5,12 +5,13 @@ import { useAuth } from "../../context/AuthContext";
 // import EnvironmentalCard from '../../components/common/EnvironmentalCard';
 import RequestCard from "../../components/common/RequestCard";
 import Loading from "../../components/common/Loading";
-import { subscribeToData } from "../../firebase";
-import { EnvironmentalMetric, BorrowRequest } from "../../utils/types";
+import { subscribeToData, updateData, readData, generateId, createData } from "../../firebase";
+import { BorrowRequest, InventoryItem, Notification } from "../../utils/types";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const [metrics, setMetrics] = useState<EnvironmentalMetric[]>([]);
+  // Environmental metrics removed as they're not currently used
+  // const [metrics, setMetrics] = useState<EnvironmentalMetric[]>([]);
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,7 +56,58 @@ const DashboardPage: React.FC = () => {
       };
     }
   }, [user]);
+  // Mark item as returned
+  const handleMarkAsReturned = async (action: "approve" | "reject" | "return", requestId: string) => {
+    if (action !== "return") return;
+    
+    const requestToUpdate = requests.find((req) => req.id === requestId);
+    if (requestToUpdate && requestToUpdate.status === "approved") {
+      try {
+        const updatedRequest: BorrowRequest = {
+          ...requestToUpdate,
+          status: "returned",
+          returnDate: new Date().toISOString(),
+        };
 
+        // Update request in Firebase
+        await updateData(`borrowRequests/${requestId}`, updatedRequest);
+
+        // Get the inventory item (using readData instead of subscribeToData to avoid infinite loop)
+        const itemData = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
+        if (itemData) {
+          // Update inventory quantity
+          const updatedItem: InventoryItem = {
+            ...itemData,
+            availableQuantity: itemData.availableQuantity + requestToUpdate.quantity,
+          };
+          await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
+          
+          // Check if availableQuantity matches physicalQuantity
+          if (updatedItem.availableQuantity !== updatedItem.physicalQuantity) {
+            // Create notification for admin
+            const notificationId = generateId('notifications');
+            const notification: Notification = {
+              id: notificationId,
+              userId: 'admin', // Target admin users
+              title: 'Inventory Discrepancy',
+              message: `Item ${updatedItem.name} has a discrepancy between available quantity (${updatedItem.availableQuantity}) and physical quantity (${updatedItem.physicalQuantity}).`,
+              read: false,
+              date: new Date().toISOString(),
+              type: 'warning'
+            };
+            
+            // Save notification to Firebase
+            await createData(`notifications/${notificationId}`, notification);
+          }
+        }
+
+        // Update local state
+        setRequests(prev => prev.map(req => req.id === requestId ? updatedRequest : req));
+      } catch (error) {
+        console.error("Error marking request as returned:", error);
+      }
+    }
+  };
   if (isLoading) {
     return <Loading />;
   }
@@ -158,7 +210,7 @@ const DashboardPage: React.FC = () => {
         {requests.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {requests.map((request) => (
-              <RequestCard key={request.id} request={request} />
+              <RequestCard key={request.id} request={request} onAction={handleMarkAsReturned} />
             ))}
           </div>
         ) : (

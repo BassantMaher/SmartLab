@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import RequestCard from '../../components/common/RequestCard';
 import SearchFilter from '../../components/common/SearchFilter';
@@ -80,8 +80,8 @@ const AdminRequestsPage: React.FC = () => {
     setStatusFilter(filter);
   };
 
-  // Handle request actions (approve/reject)
-  const handleRequestAction = async (action: 'approve' | 'reject', requestId: string) => {
+  // Handle request actions (approve/reject/return)
+  const handleRequestAction = async (action: 'approve' | 'reject' | 'return', requestId: string) => {
     if (!user) {
       setError('You must be logged in to perform this action.');
       return;
@@ -96,15 +96,16 @@ const AdminRequestsPage: React.FC = () => {
 
       const updatedRequest: BorrowRequest = {
         ...requestToUpdate,
-        status: action === 'approve' ? 'approved' : 'rejected',
+        status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'returned',
         approvedBy: user.name,
         approvalDate: new Date().toISOString(),
+        ...(action === 'return' && { returnDate: new Date().toISOString() }),
       };
 
       // Update request in Firebase
       await updateData(`borrowRequests/${requestId}`, updatedRequest);
 
-      // If approved, update inventory item quantity
+      // If approved, update inventory item quantity (decrease)
       if (action === 'approve') {
         const item = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
         if (item) {
@@ -119,6 +120,21 @@ const AdminRequestsPage: React.FC = () => {
             setError('Not enough items available to approve this request.');
             return;
           }
+        } else {
+          setError('Inventory item not found.');
+          return;
+        }
+      }
+
+      // If returned, update inventory item quantity (increase)
+      if (action === 'return') {
+        const item = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
+        if (item) {
+          const updatedItem: InventoryItem = {
+            ...item,
+            availableQuantity: item.availableQuantity + requestToUpdate.quantity,
+          };
+          await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
         } else {
           setError('Inventory item not found.');
           return;
@@ -228,7 +244,9 @@ const AdminRequestsPage: React.FC = () => {
       <div className="mb-8">
         <SearchFilter
           onSearch={handleSearch}
+          onFilter={handleFilter}
           placeholder="Search by item, student, or purpose..."
+          filterOptions={filterOptions}
         />
       </div>
 
@@ -239,7 +257,11 @@ const AdminRequestsPage: React.FC = () => {
             <RequestCard
               key={request.id}
               request={request}
-              onAction={request.status === 'pending' ? handleRequestAction : undefined}
+              onAction={
+                request.status === 'pending' || (request.status === 'approved' && !request.returnDate)
+                  ? handleRequestAction 
+                  : undefined
+              }
             />
           ))}
         </div>

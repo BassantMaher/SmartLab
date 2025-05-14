@@ -89,7 +89,7 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, onAction }) => {
           {request.approvalDate && (
             <div className="col-span-2">
               <p className="text-gray-500">
-                {request.status === "approved" ? "Approved" : "Rejected"} by:
+                {request.status === "rejected" ? "Rejected" : "Approved"} by:
               </p>
               <p className="font-medium">
                 {request.approvedBy} ({formatDate(request.approvalDate)})

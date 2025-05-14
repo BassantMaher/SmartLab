@@ -91,10 +91,10 @@ const BorrowFormPage: React.FC = () => {
         purpose,
       };
 
-      // Update inventory item available quantity
+      // No longer updating available quantity when creating a borrow request
       const updatedItem = {
         ...item,
-        availableQuantity: item.availableQuantity - quantity,
+        // Keeping the same availableQuantity
       };
 
       // Add notification for admin

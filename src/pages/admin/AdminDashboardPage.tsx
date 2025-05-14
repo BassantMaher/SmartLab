@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Box, CheckCircle, Clock, Layers, AlertTriangle } from 'lucide-react';
+import { Activity, Box, Clock, Layers, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import EnvironmentalCard from '../../components/common/EnvironmentalCard';
 import RequestCard from '../../components/common/RequestCard';
@@ -93,8 +93,8 @@ const AdminDashboardPage: React.FC = () => {
     };
   }, []);
 
-  // Handle request actions (approve/reject)
-  const handleRequestAction = async (action: 'approve' | 'reject', requestId: string) => {
+  // Handle request actions (approve/reject/return)
+  const handleRequestAction = async (action: 'approve' | 'reject' | 'return', requestId: string) => {
     const requestToUpdate = requests.find((req) => req.id === requestId);
     if (requestToUpdate && user) {
       setError(null);
@@ -116,7 +116,7 @@ const AdminDashboardPage: React.FC = () => {
           if (item) {
             const updatedItem: InventoryItem = {
               ...item,
-              availableQuantity: item.availableQuantity - 1, // Decrement on approval
+              // No longer decreasing availableQuantity on approval
             };
             await createData(`inventoryItems/${item.id}`, updatedItem);
             console.log(`Inventory item ${item.id} updated: availableQuantity = ${updatedItem.availableQuantity}`);

@@ -5,8 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import RequestCard from "../../components/common/RequestCard";
 import SearchFilter from "../../components/common/SearchFilter";
 import Loading from "../../components/common/Loading";
-import { subscribeToData, updateData, createData } from "../../firebase";
-import { BorrowRequest, InventoryItem } from "../../utils/types";
+import { subscribeToData, updateData, createData, generateId, readData } from "../../firebase";
+import { BorrowRequest, InventoryItem, Notification } from "../../utils/types";
 
 const BorrowHistoryPage: React.FC = () => {
   const { user } = useAuth();
@@ -91,22 +91,38 @@ const BorrowHistoryPage: React.FC = () => {
         // Update request in Firebase
         await updateData(`borrowRequests/${requestId}`, updatedRequest);
 
-        // Get the inventory item
-        const itemSnapshot = await subscribeToData<InventoryItem>(
-          `inventoryItems/${requestToUpdate.itemId}`,
-          async (itemData) => {
-            if (itemData) {
-              // Update inventory quantity
-              const updatedItem: InventoryItem = {
-                ...itemData,
-                availableQuantity: itemData.availableQuantity + requestToUpdate.quantity,
-              };
-              await createData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
-            }
+        // Get the inventory item (using readData instead of subscribeToData to avoid infinite loop)
+        const itemData = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
+        if (itemData) {
+          // Update inventory quantity
+          const updatedItem: InventoryItem = {
+            ...itemData,
+            availableQuantity: itemData.availableQuantity + requestToUpdate.quantity,
+          };
+          await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
+          
+          // Check if availableQuantity matches physicalQuantity
+          if (updatedItem.availableQuantity !== updatedItem.physicalQuantity) {
+            // Create notification for admin
+            const notificationId = generateId('notifications');
+            const notification: Notification = {
+              id: notificationId,
+              userId: 'admin', // Target admin users
+              title: 'Inventory Discrepancy',
+              message: `Item ${updatedItem.name} has a discrepancy between available quantity (${updatedItem.availableQuantity}) and physical quantity (${updatedItem.physicalQuantity}).`,
+              read: false,
+              date: new Date().toISOString(),
+              type: 'warning'
+            };
+            
+            // Save notification to Firebase
+            await createData(`notifications/${notificationId}`, notification);
           }
-        );
+        }
 
-        // Local state will be updated by the subscription
+        // Update local state
+        setRequests(prev => prev.map(req => req.id === requestId ? updatedRequest : req));
+        setFilteredRequests(prev => prev.map(req => req.id === requestId ? updatedRequest : req))
       } catch (error) {
         console.error("Error marking request as returned:", error);
       }
@@ -153,7 +169,7 @@ const BorrowHistoryPage: React.FC = () => {
               request={request}
               onAction={
                 request.status === "approved" && !request.returnDate
-                  ? () => handleMarkAsReturned(request.id)
+                  ? (action, requestId) => handleMarkAsReturned(action, requestId)
                   : undefined
               }
             />
