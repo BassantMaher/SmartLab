@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import EnvironmentalCard from '../../components/common/EnvironmentalCard';
 import RequestCard from '../../components/common/RequestCard';
 import Loading from '../../components/common/Loading';
-import { subscribeToData, createData } from '../../firebase';
-import { EnvironmentalMetric, BorrowRequest, InventoryItem } from '../../utils/types';
+import { subscribeToData, createData, readData, updateData,generateId } from '../../firebase';
+import { EnvironmentalMetric, BorrowRequest, InventoryItem, Notification } from '../../utils/types';
 
 const AdminDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -95,43 +95,114 @@ const AdminDashboardPage: React.FC = () => {
 
   // Handle request actions (approve/reject/return)
   const handleRequestAction = async (action: 'approve' | 'reject' | 'return', requestId: string) => {
-    const requestToUpdate = requests.find((req) => req.id === requestId);
-    if (requestToUpdate && user) {
-      setError(null);
-      try {
+    if (!user) {
+      setError('You must be logged in to perform this action.');
+      return;
+    }
+
+    try {
+      const requestToUpdate = requests.find((req) => req.id === requestId);
+      if (!requestToUpdate) {
+        setError('Request not found.');
+        return;
+      }
+
+      // If approved, update inventory item quantity (decrease)
+      if (action === 'approve') {
+        const item = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
+        if (item) {
+          // Verify item is still available
+          if (item.availableQuantity >= requestToUpdate.quantity) {
+            const updatedItem: InventoryItem = {
+              ...item,
+              availableQuantity: item.availableQuantity - requestToUpdate.quantity,
+            };
+            await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
+
+            // Create notification for admin
+            const notificationId = generateId('notifications');
+            const notification: Notification = {
+              id: notificationId,
+              userId: 'admin',
+              title: 'Item Borrowed',
+              message: `${requestToUpdate.quantity} ${item.name}(s) borrowed by ${requestToUpdate.userName}. New available quantity: ${updatedItem.availableQuantity}`,
+              read: false,
+              date: new Date().toISOString(),
+              type: 'info',
+            };
+            await createData(`notifications/${notificationId}`, notification);
+
+            // Update request
+            const updatedRequest: BorrowRequest = {
+              ...requestToUpdate,
+              status: 'approved',
+              approvedBy: user.name,
+              approvalDate: new Date().toISOString(),
+            };
+            await updateData(`borrowRequests/${requestId}`, updatedRequest);
+          } else {
+            setError('Not enough items available to approve this request.');
+            return;
+          }
+        } else {
+          setError('Inventory item not found.');
+          return;
+        }
+      }
+
+      // Handle reject action
+      if (action === 'reject') {
         const updatedRequest: BorrowRequest = {
           ...requestToUpdate,
-          status: action === 'approve' ? 'approved' : 'rejected',
+          status: 'rejected',
           approvedBy: user.name,
           approvalDate: new Date().toISOString(),
         };
-
-        // Update request in Firebase
-        await createData(`borrowRequests/${requestId}`, updatedRequest);
-        console.log(`Borrow request ${requestId} ${action}ed`);
-
-        // If approved, update inventory item quantity
-        if (action === 'approve') {
-          const item = inventoryItems.find((item) => item.id === requestToUpdate.itemId);
-          if (item) {
-            const updatedItem: InventoryItem = {
-              ...item,
-              // No longer decreasing availableQuantity on approval
-            };
-            await createData(`inventoryItems/${item.id}`, updatedItem);
-            console.log(`Inventory item ${item.id} updated: availableQuantity = ${updatedItem.availableQuantity}`);
-          }
-        }
-
-        // Update local state
-        const updatedRequests = requests.map((req) =>
-          req.id === requestId ? updatedRequest : req
-        );
-        setRequests(updatedRequests);
-      } catch (err: any) {
-        console.error(`Error updating request ${requestId}:`, err);
-        setError(`Failed to ${action} request: ${err.message || 'Unknown error'}`);
+        await updateData(`borrowRequests/${requestId}`, updatedRequest);
       }
+
+      // If returned, update inventory item quantity (increase)
+      if (action === 'return') {
+        const item = await readData<InventoryItem>(`inventoryItems/${requestToUpdate.itemId}`);
+        if (item) {
+          const updatedItem: InventoryItem = {
+            ...item,
+            availableQuantity: item.availableQuantity + requestToUpdate.quantity,
+          };
+          await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
+
+          // Create notification for admin
+          const notificationId = generateId('notifications');
+          const notification: Notification = {
+            id: notificationId,
+            userId: 'admin',
+            title: 'Item Returned',
+            message: `${requestToUpdate.quantity} ${item.name}(s) returned by ${requestToUpdate.userName}. New available quantity: ${updatedItem.availableQuantity}`,
+            read: false,
+            date: new Date().toISOString(),
+            type: 'info',
+          };
+          await createData(`notifications/${notificationId}`, notification);
+
+          // Update request
+          const updatedRequest: BorrowRequest = {
+            ...requestToUpdate,
+            status: 'returned',
+            approvedBy: user.name,
+            approvalDate: new Date().toISOString(),
+            returnDate: new Date().toISOString(),
+          };
+          await updateData(`borrowRequests/${requestId}`, updatedRequest);
+        } else {
+          setError('Inventory item not found.');
+          return;
+        }
+      }
+
+      // Rely on subscribeToData for state updates
+    } catch (err: any) {
+      console.error('Error handling request action:', err);
+      setError(err.message || 'Failed to update request. Please try again.');
     }
   };
 

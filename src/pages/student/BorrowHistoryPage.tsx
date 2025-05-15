@@ -101,22 +101,35 @@ const BorrowHistoryPage: React.FC = () => {
           };
           await updateData(`inventoryItems/${requestToUpdate.itemId}`, updatedItem);
           
+          // Create return notification for admin
+          const returnNotificationId = generateId('notifications');
+          const returnNotification: Notification = {
+            id: returnNotificationId,
+            userId: 'admin',
+            title: 'Item Returned',
+            message: `${user?.name} has returned ${requestToUpdate.quantity} ${updatedItem.name}(s).`,
+            read: false,
+            date: new Date().toISOString(),
+            type: 'info'
+          };
+          await createData(`notifications/${returnNotificationId}`, returnNotification);
+
           // Check if availableQuantity matches physicalQuantity
           if (updatedItem.availableQuantity !== updatedItem.physicalQuantity) {
-            // Create notification for admin
-            const notificationId = generateId('notifications');
-            const notification: Notification = {
-              id: notificationId,
+            // Create discrepancy notification for admin
+            const discrepancyNotificationId = generateId('notifications');
+            const discrepancyNotification: Notification = {
+              id: discrepancyNotificationId,
               userId: 'admin', // Target admin users
               title: 'Inventory Discrepancy',
-              message: `Item ${updatedItem.name} has a discrepancy between available quantity (${updatedItem.availableQuantity}) and physical quantity (${updatedItem.physicalQuantity}).`,
+              message: `After ${user?.name}'s return, item ${updatedItem.name} has a discrepancy between available quantity (${updatedItem.availableQuantity}) and physical quantity (${updatedItem.physicalQuantity}).`,
               read: false,
               date: new Date().toISOString(),
               type: 'warning'
             };
             
             // Save notification to Firebase
-            await createData(`notifications/${notificationId}`, notification);
+            await createData(`notifications/${discrepancyNotificationId}`, discrepancyNotification);
           }
         }
 
