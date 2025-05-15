@@ -9,7 +9,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginWithMicrosoft } = useAuth();
   const navigate = useNavigate();
 
   const { isAuthenticated, user } = useAuth();
@@ -174,7 +174,42 @@ const LoginPage: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-6">
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={async () => {
+                  setError("");
+                  setIsLoading(true);
+                  try {
+                    const success = await loginWithMicrosoft();
+                    if (!success) {
+                      setError("Failed to login with Microsoft");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setError("An error occurred during Microsoft login");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.4 2H2V11.4H11.4V2Z" fill="#F25022"/>
+                  <path d="M22 2H12.6V11.4H22V2Z" fill="#7FBA00"/>
+                  <path d="M11.4 12.6H2V22H11.4V12.6Z" fill="#00A4EF"/>
+                  <path d="M22 12.6H12.6V22H22V12.6Z" fill="#FFB900"/>
+                </svg>
+                Sign in with Microsoft
+              </button>
+            </div>
+
+            <div className="mt-4 text-center text-sm text-gray-600">
+              <span>or</span>
+            </div>
+
+            <div className="mt-4">
               <p className="text-center text-sm text-gray-600">Demo Accounts</p>
               <div className="mt-2 grid grid-cols-2 gap-3">
                 <button

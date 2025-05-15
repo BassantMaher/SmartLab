@@ -1,10 +1,12 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { User, AuthContextType } from "../utils/types";
-import { auth, readData, subscribeToData } from "../firebase";
+import { auth, readData, subscribeToData, microsoftProvider, createData } from "../firebase";
 import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  signInWithPopup,
+  UserCredential
 } from "firebase/auth";
 import { initializeLocalStorage } from "../utils/mockData";
 
@@ -12,6 +14,7 @@ import { initializeLocalStorage } from "../utils/mockData";
 const AuthContext = createContext<AuthContextType>({
   user: null,
   login: async () => false,
+  loginWithMicrosoft: async () => false,
   logout: async () => {},
   isAuthenticated: false,
 });
@@ -66,6 +69,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => unsubscribe();
   }, []);
 
+  // Handle user data after successful authentication
+  const handleAuthenticatedUser = async (userCredential: UserCredential, provider: 'password' | 'microsoft'): Promise<boolean> => {
+    const { uid, email, displayName } = userCredential.user;
+    
+    // Get existing user data or create new user
+    let userData = await readData<User>(`users/${uid}`);
+    
+    if (!userData) {
+      // Create new user data
+      userData = {
+        id: uid,
+        name: displayName || email?.split('@')[0] || 'User',
+        email: email || '',
+        role: email?.endsWith('@admin.smartlab.com') ? 'admin' : 'student',
+        createdAt: new Date().toISOString(),
+        provider,
+        ...(provider === 'microsoft' && { microsoftId: uid })
+      };
+      await createData(`users/${uid}`, userData);
+    }
+
+    setUser(userData);
+    setIsAuthenticated(true);
+    return true;
+  };
+
   // Login function using Firebase authentication
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -75,23 +104,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         email,
         password
       );
-      const { uid } = userCredential.user;
-
-      // Get user data from database
-      const userData = await readData<User>(`users/${uid}`);
-
-      if (userData) {
-        // Store user in state (auth state is managed by Firebase)
-        setUser(userData);
-        setIsAuthenticated(true);
-        return true;
-      } else {
-        console.error("User authenticated but no data found in database");
-        await signOut(auth); // Sign out if no user data found
-        return false;
-      }
+      return handleAuthenticatedUser(userCredential, 'password');
     } catch (error) {
       console.error("Login error:", error);
+      return false;
+    }
+  };
+
+  // Login with Microsoft
+  const loginWithMicrosoft = async (): Promise<boolean> => {
+    try {
+      const userCredential = await signInWithPopup(auth, microsoftProvider);
+      return handleAuthenticatedUser(userCredential, 'microsoft');
+    } catch (error) {
+      console.error('Microsoft login error:', error);
       return false;
     }
   };
@@ -111,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const value = {
     user,
     login,
+    loginWithMicrosoft,
     logout,
     isAuthenticated,
   };

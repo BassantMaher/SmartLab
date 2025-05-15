@@ -12,7 +12,14 @@ import {
   get,
   child,
 } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { getAuth, OAuthProvider } from "firebase/auth";
+
+// Initialize Microsoft Auth Provider
+export const microsoftProvider = new OAuthProvider('microsoft.com');
+microsoftProvider.setCustomParameters({
+  prompt: 'select_account',
+  tenant: 'common'
+});
 
 // Type for Firebase configuration
 interface FirebaseConfig {

@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
+  password?: string; // Optional for Microsoft auth
   role: string;
   department?: string;
   studentId?: string;
@@ -14,12 +14,15 @@ export interface User {
   activeRequests?: number;
   createdAt: string;
   isVerifiedAdmin?: boolean;
+  microsoftId?: string; // For Microsoft auth
+  provider?: 'password' | 'microsoft';
 }
 
 // Auth context types
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithMicrosoft: () => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
