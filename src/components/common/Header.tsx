@@ -12,7 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { subscribeToData } from "../../firebase";
 import { Notification } from "../../utils/types";
 import NotificationList from "./NotificationList";
-import { formatDate } from '../../utils/helpers';
+import { formatDate } from "../../utils/helpers";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -28,29 +28,27 @@ const Header: React.FC = () => {
 
   // Subscribe to notifications for admin only
   useEffect(() => {
-    if (user && user.role === 'admin') {
-      const unsubscribeNotifications = subscribeToData<Record<string, Notification>>(
-        'notifications',
-        (data) => {
-          if (data) {
-            const allNotifications = Object.keys(data)
-              .map((key) => ({
-                ...data[key],
-                id: key,
-              }))
-              .sort(
-                (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
-              );
+    if (user && user.role === "admin") {
+      const unsubscribeNotifications = subscribeToData<
+        Record<string, Notification>
+      >("notifications", (data) => {
+        if (data) {
+          const allNotifications = Object.keys(data)
+            .map((key) => ({
+              ...data[key],
+              id: key,
+            }))
+            .sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
 
-            setNotifications(allNotifications.slice(0, 5));
-            setUnreadCount(allNotifications.filter((n) => !n.read).length);
-          } else {
-            setNotifications([]);
-            setUnreadCount(0);
-          }
+          setNotifications(allNotifications.slice(0, 5));
+          setUnreadCount(allNotifications.filter((n) => !n.read).length);
+        } else {
+          setNotifications([]);
+          setUnreadCount(0);
         }
-      );
+      });
 
       return () => {
         unsubscribeNotifications();
@@ -99,6 +97,7 @@ const Header: React.FC = () => {
         { title: "Inventory", path: "/admin/inventory" },
         { title: "Requests", path: "/admin/requests" },
         { title: "Students", path: "/admin/students" },
+        { title: "Camera", path: "/admin/camera" },
         { title: "Settings", path: "/admin/settings" },
       ];
     }
@@ -149,7 +148,7 @@ const Header: React.FC = () => {
           {/* Right side icons */}
           <div className="hidden md:flex items-center">
             {/* Notifications dropdown - admin only */}
-            {user && user.role === 'admin' && (
+            {user && user.role === "admin" && (
               <div className="relative ml-3">
                 <button
                   onClick={toggleNotifications}
