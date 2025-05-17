@@ -8,7 +8,7 @@ import {
   signInWithPopup,
   UserCredential
 } from "firebase/auth";
-import { initializeLocalStorage } from "../utils/mockData";
+
 
 // Create the auth context with default values
 const AuthContext = createContext<AuthContextType>({
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Initialize the localStorage with mock data and check Firebase auth state
   useEffect(() => {
-    initializeLocalStorage();
+    
 
     // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
