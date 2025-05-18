@@ -53,28 +53,11 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Helper function to fill credentials and login for demo
-  const fillCredentials = async (userType: "student" | "admin") => {
-    setError("");
-    let demoEmail = "";
-    let demoPassword = "";
-
-    if (userType === "student") {
-      demoEmail = "student@student.com";
-      demoPassword = "student123";
-    } else {
-      demoEmail = "admin@admin.smartlab.com";
-      demoPassword = "admin123";
-    }
-
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#3B945E] bg-opacity-90">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="max-w-md w-full mx-4 ">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden ">
           <div className="p-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-[#3B945E]">Smart Lab</h1>
@@ -140,9 +123,8 @@ const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#3B945E] hover:bg-[#74B49B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] transition-colors duration-150 ${
-                  isLoading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#3B945E] hover:bg-[#74B49B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] transition-colors duration-150 ${isLoading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
               >
                 {isLoading ? (
                   <span className="flex items-center">
@@ -195,36 +177,14 @@ const LoginPage: React.FC = () => {
                 className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isLoading}
               >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11.4 2H2V11.4H11.4V2Z" fill="#F25022"/>
-                  <path d="M22 2H12.6V11.4H22V2Z" fill="#7FBA00"/>
-                  <path d="M11.4 12.6H2V22H11.4V12.6Z" fill="#00A4EF"/>
-                  <path d="M22 12.6H12.6V22H22V12.6Z" fill="#FFB900"/>
+                <svg className="w-5 h-7 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.4 2H2V11.4H11.4V2Z" fill="#F25022" />
+                  <path d="M22 2H12.6V11.4H22V2Z" fill="#7FBA00" />
+                  <path d="M11.4 12.6H2V22H11.4V12.6Z" fill="#00A4EF" />
+                  <path d="M22 12.6H12.6V22H22V12.6Z" fill="#FFB900" />
                 </svg>
                 Sign in with Microsoft
               </button>
-            </div>
-
-            <div className="mt-4 text-center text-sm text-gray-600">
-              <span>or</span>
-            </div>
-
-            <div className="mt-4">
-              <p className="text-center text-sm text-gray-600">Demo Accounts</p>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => fillCredentials("student")}
-                  className="py-2 px-4 border border-[#A8D5BA] rounded-lg text-sm font-medium text-[#3B945E] hover:bg-[#DFF5E1] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] transition-colors duration-150"
-                >
-                  Student Demo
-                </button>
-                <button
-                  onClick={() => fillCredentials("admin")}
-                  className="py-2 px-4 border border-[#A8D5BA] rounded-lg text-sm font-medium text-[#3B945E] hover:bg-[#DFF5E1] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] transition-colors duration-150"
-                >
-                  Admin Demo
-                </button>
-              </div>
             </div>
           </div>
         </div>
