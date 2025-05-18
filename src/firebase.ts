@@ -12,13 +12,12 @@ import {
   get,
   child,
 } from "firebase/database";
-import { getAuth, OAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-// Initialize Microsoft Auth Provider
-export const microsoftProvider = new OAuthProvider('microsoft.com');
-microsoftProvider.setCustomParameters({
-  prompt: 'select_account',
-  tenant: 'common'
+// Initialize Google Auth Provider
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
 });
 
 // Type for Firebase configuration

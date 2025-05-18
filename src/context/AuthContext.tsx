@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { User, AuthContextType } from "../utils/types";
-import { auth, readData, subscribeToData, microsoftProvider, createData } from "../firebase";
+import { auth, readData, subscribeToData, googleProvider, createData } from "../firebase";
 import {
   signInWithEmailAndPassword,
   signOut,
@@ -14,7 +14,7 @@ import {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   login: async () => false,
-  loginWithMicrosoft: async () => false,
+  loginWithGoogle: async () => false,
   logout: async () => {},
   isAuthenticated: false,
 });
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // Handle user data after successful authentication
-  const handleAuthenticatedUser = async (userCredential: UserCredential, provider: 'password' | 'microsoft'): Promise<boolean> => {
+  const handleAuthenticatedUser = async (userCredential: UserCredential, provider: 'password' | 'google'): Promise<boolean> => {
     const { uid, email, displayName } = userCredential.user;
     
     // Get existing user data or create new user
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role: email?.endsWith('@admin.smartlab.com') ? 'admin' : 'student',
         createdAt: new Date().toISOString(),
         provider,
-        ...(provider === 'microsoft' && { microsoftId: uid })
+        ...(provider === 'google' && { googleId: uid })
       };
       await createData(`users/${uid}`, userData);
     }
@@ -111,13 +111,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Login with Microsoft
-  const loginWithMicrosoft = async (): Promise<boolean> => {
+  // Login with Google
+  const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      const userCredential = await signInWithPopup(auth, microsoftProvider);
-      return handleAuthenticatedUser(userCredential, 'microsoft');
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      return handleAuthenticatedUser(userCredential, 'google');
     } catch (error) {
-      console.error('Microsoft login error:', error);
+      console.error('Google login error:', error);
       return false;
     }
   };
@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const value = {
     user,
     login,
-    loginWithMicrosoft,
+    loginWithGoogle,
     logout,
     isAuthenticated,
   };

@@ -5,7 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password?: string; // Optional for Microsoft auth
+  password?: string; // Optional for OAuth providers
   role: string;
   department?: string;
   studentId?: string;
@@ -14,15 +14,15 @@ export interface User {
   activeRequests?: number;
   createdAt: string;
   isVerifiedAdmin?: boolean;
-  microsoftId?: string; // For Microsoft auth
-  provider?: 'password' | 'microsoft';
+  googleId?: string; // For Google auth
+  provider?: 'password' | 'google';
 }
 
 // Auth context types
 export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  loginWithMicrosoft: () => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
