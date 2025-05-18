@@ -14,16 +14,16 @@ const EnvironmentalCard: React.FC<EnvironmentalCardProps> = ({ metric }) => {
   const statusBgColor = getStatusBgColor(metric.status);
 
   // Calculate percentage for the progress bar
-  const percentage = Math.min(
+  const percentage = typeof metric.value === 'number' ? Math.min(
     Math.max(
       ((metric.value - metric.minValue) / (metric.maxValue - metric.minValue)) * 100,
       0
     ),
     100
-  );
+  ) : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition-shadow duration-300">
+    <div className={` rounded-2xl shadow-md p-5 hover:shadow-lg transition-shadow duration-300 ${typeof metric.value === 'boolean' && metric.value ? 'animate-pulse bg-red-500 border-2 border-red-500' : ''}`}>
       <div className="flex justify-between items-start">
         <div className="flex items-center mb-3">
           <div className={`${statusBgColor} p-2 rounded-lg mr-3`}>
