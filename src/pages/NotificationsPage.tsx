@@ -115,12 +115,19 @@ const NotificationsPage: React.FC = () => {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-4 rounded-lg cursor-pointer ${getNotificationColor(
+              className={`p-4 rounded-lg cursor-pointer relative transition-all duration-300 ease-in-out ${getNotificationColor(
                 notification.type
-              )} ${!notification.read ? 'border-l-4 border-current' : ''}`}
+              )} ${!notification.read ? 'border-l-4 border-current' : 'opacity-75'}`}
               onClick={() => handleNotificationClick(notification.id)}
             >
               <div className="flex items-start">
+                {notification.read && (
+                  <div className="absolute top-4 right-4 text-green-600 bg-white bg-opacity-75 rounded-full p-1 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
                 <div className="flex-shrink-0">
                   <span className="text-xl">
                     {getNotificationIcon(notification.type)}

@@ -78,10 +78,17 @@ const NotificationList: React.FC<NotificationListProps> = ({
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-gray-50' : ''}`}
+                className={`px-4 py-3 hover:bg-gray-50 cursor-pointer relative transition-all duration-300 ease-in-out ${!notification.read ? 'bg-gray-50' : 'opacity-75'}`}
                 onClick={() => handleNotificationClick(notification.id)}
               >
                 <div className="flex items-start">
+                  {notification.read && (
+                    <div className="absolute top-2 right-2 text-green-500 bg-green-50 rounded-full p-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
                   <div className="flex-shrink-0">
                     <span className="text-xl">
                       {getNotificationIcon(notification.type)}
