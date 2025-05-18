@@ -13,12 +13,40 @@ const AdminDashboardPage: React.FC = () => {
   const [metrics, setMetrics] = useState<EnvironmentalMetric[]>([]);
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [doorState, setDoorState] = useState<'open' | 'closed'>('closed');
+  const [peopleCount, setPeopleCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
+
+    // Subscribe to door state
+    const unsubscribeDoor = subscribeToData<{ state: 'open' | 'closed' }>(
+      'door_state',
+      (data) => {
+        if (data) {
+          setDoorState(data.state);
+        }
+      },
+      (err: Error) => {
+        console.error('Error fetching door state:', err);
+      }
+    );
+
+    // Subscribe to people count
+    const unsubscribePeople = subscribeToData<{ counter: number }>(
+      'people_count',
+      (data) => {
+        if (data) {
+          setPeopleCount(data.counter);
+        }
+      },
+      (err: Error) => {
+        console.error('Error fetching people count:', err);
+      }
+    );
 
     // Subscribe to environmental metrics
     const unsubscribeMetrics = subscribeToData<Record<string, EnvironmentalMetric>>(
@@ -87,9 +115,12 @@ const AdminDashboardPage: React.FC = () => {
 
     // Cleanup subscriptions
     return () => {
+      // unsubscribe();
       unsubscribeMetrics();
       unsubscribeRequests();
       unsubscribeItems();
+      unsubscribeDoor();
+      unsubscribePeople();
     };
   }, []);
 
@@ -238,7 +269,7 @@ const AdminDashboardPage: React.FC = () => {
       {/* Stats Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">System Overview</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex items-center">
               <div className="bg-yellow-100 p-3 rounded-lg mr-4">
@@ -283,6 +314,40 @@ const AdminDashboardPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium text-gray-800">Env. Alerts</h3>
                 <p className="text-2xl font-bold text-gray-900">{alerts}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Access Control Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Access Control</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="flex items-center">
+              <div className={`${doorState === 'open' ? 'bg-green-100' : 'bg-red-100'} p-4 rounded-lg mr-6`}>
+                <svg className={`h-8 w-8 ${doorState === 'open' ? 'text-green-700' : 'text-red-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-medium text-gray-800">Door State</h3>
+                <p className="text-3xl font-bold text-gray-900 capitalize mt-1">{doorState}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <div className="flex items-center">
+              <div className="bg-blue-100 p-4 rounded-lg mr-6">
+                <svg className="h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-medium text-gray-800">People Count</h3>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{peopleCount}</p>
               </div>
             </div>
           </div>

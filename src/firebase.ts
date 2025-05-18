@@ -69,6 +69,8 @@ export const initializeDatabase = async (): Promise<void> => {
       inventoryItems: {},
       borrowRequests: {},
       notifications: {},
+      door_state:{},
+      people_count:{},
     };
 
     // Check if the root path has data
