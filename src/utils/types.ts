@@ -14,8 +14,8 @@ export interface User {
   activeRequests?: number;
   createdAt: string;
   isVerifiedAdmin?: boolean;
-  googleId?: string; // For Google auth
   provider?: 'password' | 'google';
+  googleId?: string;
 }
 
 // Auth context types
@@ -25,6 +25,7 @@ export interface AuthContextType {
   loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  hasCompletedProfile: boolean;
 }
 
 // Environmental metrics types

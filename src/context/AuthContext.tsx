@@ -1,14 +1,12 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { User, AuthContextType } from "../utils/types";
-import { auth, readData, subscribeToData, googleProvider, createData } from "../firebase";
+import { auth, subscribeToData, googleProvider } from "../firebase";
 import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  signInWithPopup,
-  UserCredential
+  signInWithPopup
 } from "firebase/auth";
-
 
 // Create the auth context with default values
 const AuthContext = createContext<AuthContextType>({
@@ -17,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithGoogle: async () => false,
   logout: async () => {},
   isAuthenticated: false,
+  hasCompletedProfile: false,
 });
 
 // Custom hook to use the auth context
@@ -28,83 +27,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
-  // Initialize the localStorage with mock data and check Firebase auth state
-  useEffect(() => {
-    
-
-    // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // Subscribe to user data changes
-          const unsubscribeUser = subscribeToData<User>(
-            `users/${firebaseUser.uid}`,
-            (userData) => {
-              if (userData) {
-                setUser(userData);
-                setIsAuthenticated(true);
-              } else {
-                console.error("User data not found in database");
-                setUser(null);
-                setIsAuthenticated(false);
-              }
-            }
-          );
-
-          // Cleanup user subscription when auth state changes
-          return () => unsubscribeUser();
-        } catch (error) {
-          console.error("Error setting up user subscription:", error);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-    });
-
-    // Cleanup subscription
-    return () => unsubscribe();
-  }, []);
+  const [hasCompletedProfile, setHasCompletedProfile] = useState<boolean>(false);
 
   // Handle user data after successful authentication
-  const handleAuthenticatedUser = async (userCredential: UserCredential, provider: 'password' | 'google'): Promise<boolean> => {
-    const { uid, email, displayName } = userCredential.user;
-    
-    // Get existing user data or create new user
-    let userData = await readData<User>(`users/${uid}`);
-    
-    if (!userData) {
-      // Create new user data
-      userData = {
-        id: uid,
-        name: displayName || email?.split('@')[0] || 'User',
-        email: email || '',
-        role: email?.endsWith('@admin.smartlab.com') ? 'admin' : 'student',
-        createdAt: new Date().toISOString(),
-        provider,
-        ...(provider === 'google' && { googleId: uid })
-      };
-      await createData(`users/${uid}`, userData);
+  const handleAuthenticatedUser = async (provider: 'password' | 'google'): Promise<boolean> => {
+    try {
+      setIsAuthenticated(true);
+      return true;
+    } catch (error) {
+      console.error(`Error handling ${provider} authenticated user:`, error);
+      return false;
     }
-
-    setUser(userData);
-    setIsAuthenticated(true);
-    return true;
   };
 
   // Login function using Firebase authentication
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Sign in with Firebase authentication
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      return handleAuthenticatedUser(userCredential, 'password');
+      await signInWithEmailAndPassword(auth, email, password);
+      return handleAuthenticatedUser('password');
     } catch (error) {
       console.error("Login error:", error);
       return false;
@@ -114,8 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Login with Google
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      return handleAuthenticatedUser(userCredential, 'google');
+      await signInWithPopup(auth, googleProvider);
+      return handleAuthenticatedUser('google');
     } catch (error) {
       console.error('Google login error:', error);
       return false;
@@ -133,6 +73,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Initialize Firebase auth state and subscribe to user data
+  useEffect(() => {
+    let unsubscribeUser: (() => void) | null = null;
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          unsubscribeUser = subscribeToData<User>(
+            `users/${firebaseUser.uid}`,
+            (userData) => {
+              if (userData) {
+                setUser(userData);
+                setIsAuthenticated(true);
+                setHasCompletedProfile(true);
+              } else {
+                // For new users, set minimal user data without saving to DB
+                setUser({
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email || '',
+                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                  role: firebaseUser.email?.endsWith('@admin.smartlab.com') ? 'admin' : 'student',
+                  createdAt: new Date().toISOString(),
+                  provider: firebaseUser.providerData[0]?.providerId.includes('google') ? 'google' : 'password',
+                });
+                setIsAuthenticated(true);
+                setHasCompletedProfile(false);
+              }
+            }
+          );
+        } catch (error) {
+          console.error("Error setting up user subscription:", error);
+          setUser(null);
+          setIsAuthenticated(false);
+          setHasCompletedProfile(false);
+        }
+      } else {
+        if (unsubscribeUser) unsubscribeUser();
+        setUser(null);
+        setIsAuthenticated(false);
+        setHasCompletedProfile(false);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      if (unsubscribeUser) unsubscribeUser();
+    };
+  }, []);
+
   // Auth context value
   const value = {
     user,
@@ -140,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     loginWithGoogle,
     logout,
     isAuthenticated,
+    hasCompletedProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

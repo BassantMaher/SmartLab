@@ -2,6 +2,7 @@ import React from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Layout from "../components/common/Layout";
+import CompleteProfilePage from '../pages/student/CompleteProfilePage';
 
 // Public pages
 import LoginPage from "../pages/LoginPage";
@@ -23,9 +24,15 @@ import AdminSettingsPage from "../pages/admin/AdminSettingsPage";
 import AdminCameraPage from "../pages/admin/AdminCameraPage";
 
 // Protected routes wrapper components
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+const ProfileCompleteRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { hasCompletedProfile } = useAuth();
+  if (!hasCompletedProfile) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+  return <>{children}</>;
+};
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -74,10 +81,20 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
+        path: "complete-profile",
+        element: (
+          <ProtectedRoute>
+            <CompleteProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/",
         element: (
           <ProtectedRoute>
-            <StudentRoute />
+            <ProfileCompleteRoute>
+              <StudentRoute />
+            </ProfileCompleteRoute>
           </ProtectedRoute>
         ),
         children: [
@@ -105,14 +122,12 @@ export const router = createBrowserRouter([
         path: "admin",
         element: (
           <ProtectedRoute>
-            <AdminRoute />
+            <ProfileCompleteRoute>
+              <AdminRoute />
+            </ProfileCompleteRoute>
           </ProtectedRoute>
         ),
         children: [
-          {
-            index: true,
-            element: <Navigate to="/admin/dashboard" replace />,
-          },
           {
             path: "dashboard",
             element: <AdminDashboardPage />,
@@ -128,6 +143,10 @@ export const router = createBrowserRouter([
           {
             path: "students",
             element: <AdminStudentsPage />,
+          },
+          {
+            path: "settings",
+            element: <AdminSettingsPage />,
           },
           {
             path: "camera",

@@ -7,6 +7,7 @@ import {
   readData,
   createData,
   deleteData,
+  updateData,
   auth,
 } from "../../firebase";
 import { User, BorrowRequest } from "../../utils/types";
@@ -21,6 +22,7 @@ const AdminStudentsPage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
@@ -369,7 +371,7 @@ const AdminStudentsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {student.activeRequests > 0 ? (
+                        {student.activeRequests !== undefined && student.activeRequests > 0 ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DFF5E1] text-[#3B945E]">
                             {student.activeRequests} items
                           </span>
@@ -384,6 +386,15 @@ const AdminStudentsPage: React.FC = () => {
                         className="text-[#3B945E] hover:text-[#74B49B] mr-3"
                       >
                         View
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        Edit
                       </button>
                       <button
                         onClick={() => handleRemoveStudent(student)}
@@ -426,6 +437,25 @@ const AdminStudentsPage: React.FC = () => {
         <ViewStudentModal
           student={selectedStudent}
           onClose={() => setIsViewModalOpen(false)}
+        />
+      )}
+
+      {/* Edit Student Modal */}
+      {isEditModalOpen && selectedStudent && (
+        <EditStudentModal
+          student={selectedStudent}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedStudent(null);
+          }}
+          onUpdate={(updatedStudent) => {
+            setStudents(prev =>
+              prev.map(s => s.id === updatedStudent.id ? updatedStudent : s)
+            );
+            setFilteredStudents(prev =>
+              prev.map(s => s.id === updatedStudent.id ? updatedStudent : s)
+            );
+          }}
         />
       )}
 
@@ -477,6 +507,7 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     department: "",
     studentId: "",
     profileImage: "",
+    createdAt: new Date().toISOString(),
   });
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -537,16 +568,17 @@ const AddStudentModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         department: formData.department || undefined,
         studentId: formData.studentId || undefined,
         profileImage: formData.profileImage || undefined,
+        createdAt: new Date().toISOString(),
       };
 
       await createData(`users/${userId}`, newUser);
       console.log("Student added successfully with ID:", userId);
 
-      // Update the students list in the parent component
-      setStudents((prev) => [...prev, newUser]);
-      setFilteredStudents((prev) =>
-        [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name))
-      );
+      // // Update the students list in the parent component
+      // setStudents((prev: User[]) => [...prev, newUser]);
+      // setFilteredStudents((prev: User[]) =>
+      //   [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name))
+      // );
 
       onClose();
     } catch (error: any) {
@@ -830,6 +862,175 @@ const ViewStudentModal: React.FC<{ student: User; onClose: () => void }> = ({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal Component for Editing Students
+const EditStudentModal: React.FC<{
+  student: User;
+  onClose: () => void;
+  onUpdate: (updatedStudent: User) => void;
+}> = ({ student, onClose, onUpdate }) => {
+  const [formData, setFormData] = useState<Partial<User>>({
+    name: student.name,
+    email: student.email,
+    department: student.department || "",
+    studentId: student.studentId || "",
+    profileImage: student.profileImage || "",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsUpdating(true);
+
+    try {
+      // Validation
+      if (!formData.name || !formData.email) {
+        throw new Error("Name and email are required fields.");
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        throw new Error("Please enter a valid email address.");
+      }
+
+      // Update user data in Realtime Database
+      const updatedData = {
+        ...student,
+        ...formData,
+      };
+      await updateData(`users/${student.id}`, updatedData);
+
+      // Update local state
+      onUpdate(updatedData);
+      onClose();
+    } catch (err: any) {
+      console.error("Error updating student:", err);
+      setError(err.message || "Failed to update student");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">Edit Student</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department
+              </label>
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Student ID
+              </label>
+              <input
+                type="text"
+                name="studentId"
+                value={formData.studentId}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Profile Image URL
+              </label>
+              <input
+                type="url"
+                name="profileImage"
+                value={formData.profileImage}
+                onChange={handleInputChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B945E] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className={`px-4 py-2 text-sm font-medium text-white bg-[#3B945E] rounded-lg hover:bg-[#74B49B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3B945E] ${isUpdating ? 'opacity-75 cursor-not-allowed' : ''}`}
+            >
+              {isUpdating ? 'Updating...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
