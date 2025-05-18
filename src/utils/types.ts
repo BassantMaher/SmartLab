@@ -31,7 +31,7 @@ export interface AuthContextType {
 export interface EnvironmentalMetric {
   id: string;
   name: string;
-  value: number;
+  value: number | boolean;
   unit: string;
   status: "normal" | "warning" | "critical";
   timestamp: string;

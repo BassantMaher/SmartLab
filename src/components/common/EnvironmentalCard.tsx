@@ -38,20 +38,29 @@ const EnvironmentalCard: React.FC<EnvironmentalCardProps> = ({ metric }) => {
       
       <div className="mt-2">
         <div className="flex justify-between items-baseline mb-1">
-          <span className="text-2xl font-bold text-gray-900">{metric.value} {metric.unit}</span>
-          <span className="text-xs text-gray-500">
-            {metric.minValue} - {metric.maxValue} {metric.unit}
+          <span className="text-2xl font-bold text-gray-900">
+            {typeof metric.value === 'boolean' 
+              ? (metric.value ? 'Smoke Detected' : 'No Smoke Detected')
+              : `${metric.value} ${metric.unit}`
+            }
           </span>
+          {typeof metric.value === 'number' && (
+            <span className="text-xs text-gray-500">
+              {metric.minValue} - {metric.maxValue} {metric.unit}
+            </span>
+          )}
         </div>
         
-        <div className="relative pt-1">
-          <div className="overflow-hidden h-2 mb-2 text-xs flex rounded-full bg-gray-200">
-            <div 
-              style={{ width: `${percentage}%` }} 
-              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${statusColor} transition-all duration-500 ease-in-out`}
-            />
+        {typeof metric.value === 'number' && (
+          <div className="relative pt-1">
+            <div className="overflow-hidden h-2 mb-2 text-xs flex rounded-full bg-gray-200">
+              <div 
+                style={{ width: `${percentage}%` }} 
+                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${statusColor} transition-all duration-500 ease-in-out`}
+              />
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="text-xs text-gray-500 mt-2">
           Last updated: {new Date(metric.timestamp).toLocaleTimeString()}
