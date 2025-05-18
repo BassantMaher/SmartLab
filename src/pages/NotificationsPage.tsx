@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Notification } from '../utils/types';
-import { subscribeToData } from '../firebase';
+import { subscribeToData, updateData } from '../firebase';
 import { formatDate } from '../utils/helpers';
 
 const NotificationsPage: React.FC = () => {
+  const handleNotificationClick = async (id: string) => {
+    try {
+      await updateData(`notifications/${id}`, { read: true });
+      // Update local state
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,9 +115,10 @@ const NotificationsPage: React.FC = () => {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-4 rounded-lg ${getNotificationColor(
+              className={`p-4 rounded-lg cursor-pointer ${getNotificationColor(
                 notification.type
               )} ${!notification.read ? 'border-l-4 border-current' : ''}`}
+              onClick={() => handleNotificationClick(notification.id)}
             >
               <div className="flex items-start">
                 <div className="flex-shrink-0">

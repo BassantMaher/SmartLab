@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Notification } from '../../utils/types';
 import { formatDate } from '../../utils/helpers';
 import { markNotificationAsRead } from '../../utils/localStorage';
+import { updateData } from '../../firebase';
 
 interface NotificationListProps {
   notifications: Notification[];
@@ -41,8 +42,15 @@ const NotificationList: React.FC<NotificationListProps> = ({
     }
   };
 
-  const handleNotificationClick = (id: string) => {
-    markNotificationAsRead(id);
+  const handleNotificationClick = async (id: string) => {
+    try {
+      // Update read status in Firebase
+      await updateData(`notifications/${id}`, { read: true });
+      // Also update in local storage for immediate UI feedback
+      markNotificationAsRead(id);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   return (
